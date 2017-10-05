@@ -1,0 +1,277 @@
+package world;
+
+import java.awt.Point;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.StringTokenizer;
+
+
+
+
+
+
+
+
+
+public class World
+{
+  private ArrayList<ArrayList<String>> worldMap;
+  private Point startPos;
+  private Point endPos;
+  private boolean isProbabilistic = false;
+  
+  public boolean getUncertain() { return isProbabilistic; }
+  
+
+
+  private GUI g;
+  
+  public boolean getHasGUI()
+  {
+    return hasGUI;
+  }
+  
+
+
+
+
+  public World(String filename, boolean isProbabilistic)
+    throws Exception
+  {
+    this.isProbabilistic = isProbabilistic;
+    
+    loadWorld(filename);
+  }
+  
+
+
+  public void createGUI(int width, int height, int stepCounter)
+  {
+    hasGUI = true;
+    sleepNumber = stepCounter;
+    
+
+    if (sleepNumber < 100) {
+      sleepNumber = 100;
+    }
+    
+    g = new GUI(worldMap, isProbabilistic, sleepNumber, width, height);
+  }
+  
+
+
+  private boolean hasGUI;
+  
+
+  private int sleepNumber;
+  
+  protected String pingMap(Robot robot, Point pingPoint)
+  {
+    if (robot == null) { return null;
+    }
+    
+    if ((x < 0) || (x >= worldMap.size())) return null;
+    if ((y < 0) || (y >= ((ArrayList)worldMap.get(0)).size())) { return null;
+    }
+    
+    String loc = (String)((ArrayList)worldMap.get(x)).get(y);
+    
+
+    if (loc.equals("S")) return loc;
+    if (loc.equals("F")) { return loc;
+    }
+    
+    if (isProbabilistic)
+    {
+
+      int dist = Math.max(Math.abs(robot.getX() - x), Math.abs(robot.getY() - y));
+      
+
+      int cutoff = Math.min(dist, 8);
+      
+
+      int rand = (int)Math.floor(Math.random() * 10.0D);
+      
+
+      if (rand < cutoff) {
+        if (Math.random() < 0.5D) loc = "O"; else {
+          loc = "X";
+        }
+      }
+    }
+    return loc;
+  }
+  
+
+
+
+
+
+  protected boolean isValidMove(Point curPos, Point newPos)
+  {
+    if ((x < 0) || (x >= worldMap.size())) return false;
+    if ((y < 0) || (y >= ((ArrayList)worldMap.get(0)).size())) { return false;
+    }
+    
+    if ((Math.abs(x - curPos.getX()) > 1.0D) || (Math.abs(y - curPos.getY()) > 1.0D)) { return false;
+    }
+    
+    String loc = (String)((ArrayList)worldMap.get(x)).get(y);
+    
+
+    if (loc.equals("X")) {
+      if (g != null) {
+        g.showWall(newPos);
+      }
+      return false;
+    }
+    if (g != null) {
+      g.refresh(curPos, newPos);
+    }
+    
+    return true;
+  }
+  
+
+
+  protected boolean testEndGameCondition(Robot robot)
+  {
+    if (((String)((ArrayList)worldMap.get(robot.getX())).get(robot.getY())).equals("F")) return true;
+    return false;
+  }
+  
+  void makeGuess(Point p, boolean grass)
+  {
+    g.makeGuess(p, grass);
+  }
+  
+
+
+
+
+
+  public int numRows() { return worldMap.size(); }
+  public int numCols() { return ((ArrayList)worldMap.get(0)).size(); }
+  
+  public Point getStartPos() { return startPos; }
+  public Point getEndPos() { return endPos; }
+  
+
+
+  private void loadWorld(String filename)
+    throws Exception
+  {
+    if (filename == null) { throw new Exception("[Exception] in World.java (Constructor): filename cannot be null");
+    }
+    
+    System.out.println("Loading world from file: " + filename);
+    
+
+    worldMap = new ArrayList();
+    
+
+    Scanner scan = new Scanner(new File(filename));
+    while (scan.hasNextLine()) {
+      String line = scan.nextLine();
+      ArrayList<String> nextRow = new ArrayList();
+      StringTokenizer tokenizer = new StringTokenizer(line);
+      while (tokenizer.hasMoreTokens()) {
+        nextRow.add(tokenizer.nextToken());
+      }
+      System.out.println(nextRow.toString());
+      worldMap.add(nextRow);
+    }
+    scan.close();
+    
+    validateWorld();
+  }
+  
+
+
+
+
+
+  private void validateWorld()
+  {
+    System.out.println("Validating the World: Checking for errors...");
+    
+
+    startPos = null;endPos = null;
+    
+
+    if (worldMap == null) {
+      System.err.println("[Fatal Error]: World Map was null when validating the world...exiting");
+      System.exit(2);
+    }
+    for (ArrayList<String> row : worldMap) {
+      if (row == null) {
+        System.err.println("[Fatal Error]: At least one row in the map was null when validating the world...exiting");
+        System.exit(3);
+      }
+    }
+    
+
+    if ((worldMap.size() == 0) || (((ArrayList)worldMap.get(0)).size() == 0)) {
+      System.err.println("[Fatal Error]: Map does not have any contents...exiting");
+      System.exit(4);
+    }
+    
+
+    int firstLength = ((ArrayList)worldMap.get(0)).size();
+    for (Object row : worldMap) {
+      if (((ArrayList)row).size() != firstLength) {
+        System.err.println("[Fatal Error]: Every row in map must have the same size (must be rectangular)...exiting");
+        System.exit(5);
+      }
+    }
+    
+
+    Object validChars = new ArrayList();
+    ((ArrayList)validChars).add("S");((ArrayList)validChars).add("F");((ArrayList)validChars).add("O");((ArrayList)validChars).add("X");
+    int curRow = 0;int curCol = 0;
+    for (ArrayList<String> row : worldMap) {
+      curCol = 0;
+      for (String character : row) {
+        boolean valid = false;
+        for (String validChar : (ArrayList)validChars) {
+          if (character.equals(validChar)) valid = true;
+        }
+        if (!valid) {
+          System.err.println("[Fatal Error]: Map contains an invalid character (" + character + ")...exiting");
+          System.exit(6);
+        }
+        
+        if (character.equals("S")) {
+          if (startPos != null) {
+            System.err.println("[Fatal Error]: Map contains more than one starting position...exiting");
+            System.exit(7);
+          }
+          startPos = new Point(curRow, curCol);
+        }
+        
+        if (character.equals("F")) {
+          if (endPos != null) {
+            System.err.println("[Fatal Error]: Map contains more than one ending position...exiting");
+            System.exit(8);
+          }
+          endPos = new Point(curRow, curCol);
+        }
+        
+        curCol++;
+      }
+      curRow++;
+    }
+    
+
+    if ((startPos == null) || (endPos == null)) {
+      System.out.println("[Fatal Error]: Map does have either a start or end position.");
+      System.exit(9);
+    }
+    
+
+
+    System.out.println("World loaded! Everything seems ok!");
+  }
+}

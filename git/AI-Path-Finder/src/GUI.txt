@@ -1,0 +1,211 @@
+package world;
+
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+
+
+
+
+
+public class GUI
+{
+  private Image grass;
+  private Image robot;
+  private Image wall;
+  private Image goal;
+  private Image questionmark;
+  private Image lavaQuestionMark;
+  private Image grassQuestionMark;
+  private ArrayList<ArrayList<String>> mapData;
+  private Point player;
+  private int sleepNumber;
+  JFrame frame = new JFrame("Homework 2");
+  
+  JPanel panel;
+  
+
+  public GUI(ArrayList<ArrayList<String>> worldMap, boolean uncertainty, int sleepNumber, int daWidth, int daHeight)
+  {
+    panel = new JPanel(new GridLayout(worldMap.size(), ((ArrayList)worldMap.get(0)).size(), 0, 0));
+    
+
+    this.sleepNumber = sleepNumber;
+    
+
+    if (!uncertainty) {
+      mapData = ((ArrayList)worldMap.clone());
+    }
+    else
+    {
+      mapData = new ArrayList();
+    }
+    
+    try
+    {
+      grass = ImageIO.read(new File("guiImages/open.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+      robot = ImageIO.read(new File("guiImages/robot.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+      goal = ImageIO.read(new File("guiImages/goal.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+      wall = ImageIO.read(new File("guiImages/closed.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+      questionmark = ImageIO.read(new File("guiImages/unknown.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+      lavaQuestionMark = ImageIO.read(new File("guiImages/closedguess.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+      grassQuestionMark = ImageIO.read(new File("guiImages/openguess.png")).getScaledInstance(daWidth / ((ArrayList)worldMap.get(0)).size(), daHeight / worldMap.size(), 4);
+    }
+    catch (IOException e) {
+      e.printStackTrace();
+    }
+    
+
+    for (int i = 0; i < worldMap.size(); i++)
+    {
+      ArrayList<String> temp = new ArrayList();
+      
+      for (int j = 0; j < ((ArrayList)worldMap.get(i)).size(); j++)
+      {
+        String s = (String)((ArrayList)worldMap.get(i)).get(j);
+        
+        ImageIcon p;
+        
+        if (s.equals("S")) {
+          ImageIcon p = new ImageIcon(robot);
+          temp.add("S");
+          player = new Point(i, j);
+        }
+        else if (s.equals("F")) {
+          ImageIcon p = new ImageIcon(goal);
+          temp.add("F");
+        }
+        else if (uncertainty) {
+          ImageIcon p = new ImageIcon(questionmark);
+          temp.add("?");
+        } else {
+          ImageIcon p;
+          if (s.equals("X")) {
+            p = new ImageIcon(wall);
+          }
+          else {
+            p = new ImageIcon(grass);
+          }
+        }
+        
+
+
+        JLabel pic = new JLabel(p);
+        panel.add(pic);
+      }
+      
+
+      mapData.add(temp);
+    }
+    
+
+
+
+    frame.setContentPane(panel);
+    frame.setSize(daWidth, daHeight);
+    frame.setDefaultCloseOperation(3);
+    frame.setVisible(true);
+  }
+  
+  public void makeGuess(Point p, boolean grass)
+  {
+    try
+    {
+      Thread.sleep(sleepNumber);
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    
+
+    int guessLoc = ((ArrayList)mapData.get(0)).size() * x + y;
+    panel.remove(guessLoc);
+    JLabel guessLabel;
+    JLabel guessLabel; if (grass) {
+      guessLabel = new JLabel(new ImageIcon(grassQuestionMark));
+    }
+    else {
+      guessLabel = new JLabel(new ImageIcon(lavaQuestionMark));
+    }
+    
+    panel.add(guessLabel, guessLoc);
+    panel.revalidate();
+    panel.repaint();
+  }
+  
+
+  public void showWall(Point wallP)
+  {
+    try
+    {
+      Thread.sleep(sleepNumber);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    
+    if (((String)((ArrayList)mapData.get(x)).get(y)).equals("?")) {
+      int wallLoc = ((ArrayList)mapData.get(0)).size() * x + y;
+      panel.remove(wallLoc);
+      JLabel wally = new JLabel(new ImageIcon(wall));
+      panel.add(wally, wallLoc);
+      panel.revalidate();
+      panel.repaint();
+      ArrayList<String> temp = new ArrayList();
+      temp = (ArrayList)mapData.get(x);
+      temp.set(y, "X");
+      mapData.set(x, temp);
+    }
+  }
+  
+  public void refresh(Point curr, Point old)
+  {
+    try {
+      Thread.sleep(sleepNumber);
+    }
+    catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    
+    int newRobotIndex = ((ArrayList)mapData.get(0)).size() * x + y;
+    int oldRobotIndex = ((ArrayList)mapData.get(0)).size() * x + y;
+    
+    panel.remove(newRobotIndex);
+    JLabel grassy = new JLabel(new ImageIcon(grass));
+    panel.add(grassy, newRobotIndex);
+    
+    panel.remove(oldRobotIndex);
+    JLabel roboty = new JLabel(new ImageIcon(robot));
+    panel.add(roboty, oldRobotIndex);
+    
+    panel.revalidate();
+    panel.repaint();
+  }
+  
+
+  public void moveRobot(Point p)
+  {
+    ArrayList<String> temp = (ArrayList)mapData.get(player.x);
+    temp.set(player.y, "O");
+    mapData.set(player.x, temp);
+    
+
+    temp = (ArrayList)mapData.get(x);
+    temp.set(y, "S");
+    mapData.set(x, temp);
+    
+    refresh(p, player);
+    
+    player.x = x;
+    player.y = y;
+  }
+}
