@@ -227,49 +227,49 @@ public class MyRobot extends Robot {
             ArrayList<Point> neighbors = new ArrayList<Point>();
             
             Point topleft = new Point((int) current.getX()-1, (int) current.getY()-1);
-            if (isValidIsUncertain(topleft)) {
+            if (isValidIsUncertain(topleft, blocked)) {
             	neighbors.add(topleft);
             	if(!gScore.keySet().contains(topleft)) gScore.put(topleft, Double.MAX_VALUE);
             }
             
             Point topmid = new Point((int) current.getX()-1, (int) current.getY());
-            if (isValidIsUncertain(topmid)) {
+            if (isValidIsUncertain(topmid, blocked)) {
             	neighbors.add(topmid);
             	if(!gScore.keySet().contains(topmid)) gScore.put(topmid, Double.MAX_VALUE);
             }
             
             Point topright = new Point((int) current.getX()-1, (int) current.getY()+1);
-            if (isValidIsUncertain(topright)) {
+            if (isValidIsUncertain(topright, blocked)) {
             	neighbors.add(topright);
             	if(!gScore.keySet().contains(topright)) gScore.put(topright, Double.MAX_VALUE);
             }
             
             Point midleft = new Point((int) current.getX(), (int) current.getY()-1);
-            if (isValidIsUncertain(midleft)) {
+            if (isValidIsUncertain(midleft, blocked)) {
             	neighbors.add(midleft);
             	if(!gScore.keySet().contains(midleft)) gScore.put(midleft, Double.MAX_VALUE);
             }
             
             Point midright = new Point((int) current.getX(), (int) current.getY()+1);
-            if (isValidIsUncertain(midright)) {
+            if (isValidIsUncertain(midright, blocked)) {
             	neighbors.add(midright);
             	if(!gScore.keySet().contains(midright)) gScore.put(midright, Double.MAX_VALUE);
             }
             
             Point botleft = new Point((int) current.getX()+1, (int) current.getY()-1);
-            if (isValidIsUncertain(botleft)) {
+            if (isValidIsUncertain(botleft, blocked)) {
             	neighbors.add(botleft);
             	if(!gScore.keySet().contains(botleft)) gScore.put(botleft, Double.MAX_VALUE);
             }
             
             Point botmid = new Point((int) current.getX()+1, (int) current.getY());
-            if (isValidIsUncertain(botmid)) {
+            if (isValidIsUncertain(botmid, blocked)) {
             	neighbors.add(botmid);
             	if(!gScore.keySet().contains(botmid)) gScore.put(botmid, Double.MAX_VALUE);
             }
             
             Point botright = new Point((int) current.getX()+1, (int) current.getY()+1);
-            if (isValidIsUncertain(botright)) {
+            if (isValidIsUncertain(botright, blocked)) {
             	neighbors.add(botright);
             	if(!gScore.keySet().contains(botright)) gScore.put(botright, Double.MAX_VALUE);
             }
@@ -304,16 +304,24 @@ public class MyRobot extends Robot {
             }
         }   
         
-        // robot is stuck, reset and try again
+        // robot is stuck, reset and try again (assumes that a path from S to F always exists)
         blocked.add(this.getPosition());
         backtrack(cameFrom, this.getPosition());
         return AStarIsUncertain(start, end, blocked);
     }
     
-    public boolean isValidIsUncertain(Point p) {
+    public boolean isValidIsUncertain(Point p, ArrayList<Point> blocked) {
     	int x = myWorld.numRows();
     	int y = myWorld.numCols();
+    	
+    	// valid location on map 
     	if (p.getX() < x && p.getX() >= 0 && p.getY()< y && p.getY() >=0){
+    		
+        	// neighbor is blocked location, ignore the neighbor
+        	if (blocked.contains(p)){
+        		return false;
+        	}
+        	
     		// robot current location 
     		Point robotLocation = this.getPosition();
     		// make sure you can move to that location on the map
@@ -323,6 +331,12 @@ public class MyRobot extends Robot {
     			this.move(robotLocation);
     			return true;
     		}
+    		/*
+    		// robot was unable to move to that location, X
+    		else{
+    			blocked.add(p);
+    			return false;
+    		}*/
     	}
     	return false;
     }
