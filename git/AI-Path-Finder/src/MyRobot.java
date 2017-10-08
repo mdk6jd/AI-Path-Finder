@@ -19,7 +19,8 @@ public class MyRobot extends Robot {
         
         if (isUncertain) {
 			// call function to deal with uncertainty
-        	ArrayList<Point> path = AStarIsUncertain(start, end);
+        	ArrayList<Point> blocked = new ArrayList<Point>();
+        	ArrayList<Point> path = AStarIsUncertain(start, end, blocked);
         }
         else {
 			// call function to deal with certainty
@@ -175,7 +176,7 @@ public class MyRobot extends Robot {
     
     // code for uncertainty -------------------------------------------------------------------------------------------
     
-    public ArrayList<Point> AStarIsUncertain(Point start, Point end){
+    public ArrayList<Point> AStarIsUncertain(Point start, Point end, ArrayList<Point> blocked){
     	
         // The set of nodes already evaluated
         ArrayList<Point> closedSet = new ArrayList<Point>();
@@ -214,11 +215,6 @@ public class MyRobot extends Robot {
         			minimum = fScore.get(openSet.get(i));
         		}
         	}
-        	
-        	//System.out.println("current");
-        	//System.out.println(current);
-        	System.out.println("robotposition");
-        	System.out.println(this.getPosition());
         	
             if ( (current.getX() == end.getX()) && (current.getY() == end.getY()) ){
                 return reconstructPath(cameFrom, current);
@@ -283,6 +279,11 @@ public class MyRobot extends Robot {
             		continue;		// Ignore the neighbor which is already evaluated.
             	}
 
+            	// neighbor is blocked location, ignore the neighbor
+            	if (blocked.contains(neighbors.get(i))){
+            		continue;
+            	}
+            	
             	if (!openSet.contains(neighbors.get(i))){	// Discover a new node
 	                openSet.add(neighbors.get(i));
             	}
@@ -294,6 +295,7 @@ public class MyRobot extends Robot {
 	                continue;		// This is not a better path.
 	            }
 	            // This path is the best until now, move the robot and record it
+	            // System.out.print(this.getPosition());
 	            this.move(neighbors.get(i));
 	            cameFrom.put(neighbors.get(i), current);
 	            gScore.put(neighbors.get(i), tentative_gScore);
@@ -301,7 +303,11 @@ public class MyRobot extends Robot {
 
             }
         }   
-        return null;
+        
+        // robot is stuck, reset and try again
+        blocked.add(this.getPosition());
+        backtrack(cameFrom, this.getPosition());
+        return AStarIsUncertain(start, end, blocked);
     }
     
     public boolean isValidIsUncertain(Point p) {
@@ -327,6 +333,13 @@ public class MyRobot extends Robot {
     	return cost;
     }
     
+    public void backtrack(Map<Point, Point> cameFrom, Point current){
+    	while(cameFrom.keySet().contains(current)){
+    		current = cameFrom.get(current);
+    		this.move(current);
+    	}
+    }
+    
     public ArrayList<Point> reconstructPath(Map<Point, Point> cameFrom, Point current) {
     	ArrayList<Point> totalPath = new ArrayList<>();
     	totalPath.add(current);
@@ -345,7 +358,7 @@ public class MyRobot extends Robot {
 
     public static void main(String[] args) {
         try {
-			myWorld = new World("./src/TestCases/myInputFile2.txt", true);
+			myWorld = new World("./src/TestCases/myInputFile4.txt", true);
 			
             MyRobot robot = new MyRobot();
             robot.addToWorld(myWorld);
