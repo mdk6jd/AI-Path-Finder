@@ -294,17 +294,31 @@ public class MyRobot extends Robot {
 	            if (tentative_gScore >= gScore.get(neighbors.get(i))){
 	                continue;		// This is not a better path.
 	            }
+	            
+	            System.out.println(this.getPosition());
+	            if(pingMap(neighbors.get(i)).equals("F")) System.out.println("F reached");
+	            
 	            // This path is the best until now, move the robot and record it
 	            // System.out.print(this.getPosition());
-	            this.move(neighbors.get(i));
-	            cameFrom.put(neighbors.get(i), current);
-	            gScore.put(neighbors.get(i), tentative_gScore);
-	            fScore.put(neighbors.get(i), gScore.get(neighbors.get(i))+HeuristicCostEstimate(neighbors.get(i),end));
-
+	    		// make sure you can move to that location on the map
+	    		Point robotNeighborLocation = this.move(neighbors.get(i));
+	    		// robot was able to move to that location
+	    		if(robotNeighborLocation.equals(neighbors.get(i))){
+		            cameFrom.put(neighbors.get(i), current);
+		            gScore.put(neighbors.get(i), tentative_gScore);
+		            fScore.put(neighbors.get(i), gScore.get(neighbors.get(i))+HeuristicCostEstimate(neighbors.get(i),end));
+	    		} 
+	    		// robot was not able to move to that location 
+	    		else{
+	    			blocked.add(neighbors.get(i));
+	    			gScore.put(neighbors.get(i), 999.9);
+		            fScore.put(neighbors.get(i), 999.9);
+	    		}
             }
         }   
         
-        // robot is stuck, reset and try again (assumes that a path from S to F always exists)
+        // robot is stuck, reset and try again (assumes that a path from S to F always ei
+        System.out.println("Robot stuck");
         blocked.add(this.getPosition());
         backtrack(cameFrom, this.getPosition());
         return AStarIsUncertain(start, end, blocked);
@@ -322,6 +336,23 @@ public class MyRobot extends Robot {
         		return false;
         	}
         	
+    		// make sure you can move to that location on the map
+    		// ping 1000 times to find probability of O and X
+    		int oProbability = 0;
+    		int xProbability = 0;
+    		for(int i = 0; i < 1000; i++){
+    			String positionStatus = pingMap(p);
+    			if(positionStatus.equals("F")) return true;
+    			if(positionStatus.equals("S")) return false;
+    			if(positionStatus.equals("O")) oProbability++;
+    			if(positionStatus.equals("X")) xProbability++;
+    		}
+    		//System.out.println(p);
+    		//System.out.println(oProbability);
+    		if(oProbability > xProbability) return true;
+    		else return false;
+        	
+        	/*
     		// robot current location 
     		Point robotLocation = this.getPosition();
     		// make sure you can move to that location on the map
@@ -372,11 +403,11 @@ public class MyRobot extends Robot {
 
     public static void main(String[] args) {
         try {
-			myWorld = new World("./src/TestCases/myInputFile4.txt", true);
+			myWorld = new World("./src/TestCases/myInputFile3.txt", true);
 			
             MyRobot robot = new MyRobot();
             robot.addToWorld(myWorld);
-			// myWorld.createGUI(400, 400, 200); // uncomment this and create a GUI; the last parameter is delay in msecs
+			myWorld.createGUI(400, 400, 200); // uncomment this and create a GUI; the last parameter is delay in msecs
 
 			robot.travelToDestination();
         }
