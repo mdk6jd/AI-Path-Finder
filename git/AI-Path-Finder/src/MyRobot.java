@@ -19,6 +19,7 @@ public class MyRobot extends Robot {
         
         if (isUncertain) {
 			// call function to deal with uncertainty
+
         	ArrayList<Point> blocked = new ArrayList<Point>();
         	ArrayList<Point> path = AStarIsUncertain(start, end, blocked);
         }
@@ -31,6 +32,7 @@ public class MyRobot extends Robot {
             	Point moveTo = path.get(i);
             	this.move(moveTo);
             }
+
         }
     }
     
@@ -372,7 +374,9 @@ public class MyRobot extends Robot {
 
     public static void main(String[] args) {
         try {
-			myWorld = new World("./src/TestCases/myInputFile4.txt", true);
+
+		myWorld = new World("./src/TestCases/myInputFile4.txt", true);
+
 			
             MyRobot robot = new MyRobot();
             robot.addToWorld(myWorld);

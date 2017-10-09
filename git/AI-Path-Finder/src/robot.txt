@@ -1,0 +1,115 @@
+package world;
+
+import java.awt.Point;
+
+public abstract class Robot
+{
+  private World world;
+  private Point position;
+  private int numMoves = 0;
+  private int numPings = 0;
+  
+
+
+  public Robot()
+  {
+    position = new Point(0, 0);
+  }
+  
+
+
+
+  public abstract void travelToDestination();
+  
+
+
+
+  public void addToWorld(World world)
+  {
+    if (world == null) { return;
+    }
+    this.world = world;
+    
+    setPosition(world.getStartPos());
+    numMoves = 0;
+    numPings = 0;
+  }
+  
+  public void makeGuess(Point p, boolean grass)
+  {
+    if (world.getHasGUI()) {
+      world.makeGuess(p, grass);
+    }
+  }
+  
+
+
+
+
+
+
+  public Point move(Point newPosition)
+  {
+    if (newPosition == null) { return new Point(position.x, position.y);
+    }
+    if (world.isValidMove(getPosition(), newPosition)) {
+      setPosition(newPosition);
+      numMoves += 1;
+      
+
+      if (world.testEndGameCondition(this)) { endGame();
+      }
+    }
+    return new Point(position.x, position.y);
+  }
+  
+
+
+
+  public String pingMap(Point position)
+  {
+    if (position == null) { return null;
+    }
+    numPings += 1;
+    return world.pingMap(this, position);
+  }
+  
+
+
+
+
+
+
+
+
+  private void setPosition(Point p)
+  {
+    if (world == null) { return;
+    }
+    if ((x < 0) || (x >= world.numRows())) return;
+    if ((y < 0) || (y >= world.numCols())) { return;
+    }
+    position.setLocation(x, y);
+  }
+  
+  private void endGame()
+  {
+    System.out.println("You reached the destination!");
+    System.out.println("Total number of moves: " + getNumMoves());
+    System.out.println("Total number of pings: " + getNumPings());
+    System.exit(0);
+  }
+  
+
+
+
+  public int getNumMoves() { return numMoves; }
+  public int getNumPings() { return numPings; }
+  
+
+
+
+  public int getX() { return getPositionx; }
+  public int getY() { return getPositiony; }
+  public Point getPosition() { return new Point(position.x, position.y); }
+}
