@@ -19,9 +19,12 @@ public class MyRobot extends Robot {
         
         if (isUncertain) {
 			// call function to deal with uncertainty
-
         	ArrayList<Point> blocked = new ArrayList<Point>();
         	ArrayList<Point> path = AStarIsUncertain(start, end, blocked);
+            for(int i = path.size()-1; i >=0; i--){
+            	Point moveTo = path.get(i);
+            	this.move(moveTo);
+            }
         }
         else {
 			// call function to deal with certainty
@@ -32,7 +35,6 @@ public class MyRobot extends Robot {
             	Point moveTo = path.get(i);
             	this.move(moveTo);
             }
-
         }
     }
     
@@ -69,6 +71,7 @@ public class MyRobot extends Robot {
         fScore.put(start, HeuristicCostEstimate(start, end));
 
         while (!openSet.isEmpty()){
+        	System.out.println(openSet);
             //current := the node in openSet having the lowest fScore[] value
         	double minimum = Double.MAX_VALUE;
         	Point current = new Point();
@@ -177,8 +180,7 @@ public class MyRobot extends Robot {
     }
     
     // code for uncertainty -------------------------------------------------------------------------------------------
-    
-    public ArrayList<Point> AStarIsUncertain(Point start, Point end, ArrayList<Point> blocked){
+  public ArrayList<Point> AStarIsUncertain(Point start, Point end, ArrayList<Point> blocked){
     	
         // The set of nodes already evaluated
         ArrayList<Point> closedSet = new ArrayList<Point>();
@@ -298,11 +300,12 @@ public class MyRobot extends Robot {
 	            }
 	            // This path is the best until now, move the robot and record it
 	            // System.out.print(this.getPosition());
+	            
 	            this.move(neighbors.get(i));
 	            cameFrom.put(neighbors.get(i), current);
 	            gScore.put(neighbors.get(i), tentative_gScore);
-	            fScore.put(neighbors.get(i), gScore.get(neighbors.get(i))+HeuristicCostEstimate(neighbors.get(i),end));
-
+	            fScore.put(neighbors.get(i), gScore.get(neighbors.get(i))+HeuristicCostEstimate(neighbors.get(i),end) + moreEstimate(neighbors.get(i), blocked));
+	            System.out.println(openSet);
             }
         }   
         
@@ -312,6 +315,24 @@ public class MyRobot extends Robot {
         return AStarIsUncertain(start, end, blocked);
     }
     
+  public double moreEstimate(Point p, ArrayList<Point> blocked) {
+  	int x = myWorld.numRows();
+  	int y = myWorld.numCols();
+  	if (p.getX() < x && p.getX() >= 0 && p.getY()< y && p.getY() >=0){
+  		
+	    	int xPt = 0;
+	    	for (int i = 0; i < 200; i++){
+	       		String positionStatus = pingMap(p).trim();
+	       		// record if it's X
+	    		if (positionStatus.equals("X")){
+	    			xPt++;
+	    		}
+	    	}
+	    	return xPt;
+  	}
+  	return 1000;
+  }
+
     public boolean isValidIsUncertain(Point p, ArrayList<Point> blocked) {
     	int x = myWorld.numRows();
     	int y = myWorld.numCols();
@@ -323,7 +344,8 @@ public class MyRobot extends Robot {
         	if (blocked.contains(p)){
         		return false;
         	}
-        	
+        	return true;
+        	/*
     		// robot current location 
     		Point robotLocation = this.getPosition();
     		// make sure you can move to that location on the map
@@ -333,6 +355,26 @@ public class MyRobot extends Robot {
     			this.move(robotLocation);
     			return true;
     		}
+    		*/
+        	
+        	
+        	/*
+        	int xPt = 0;
+        	for (int i = 0; i < 200; i++){
+           		String positionStatus = pingMap(p).trim();
+           		// record if it's X
+        		if (positionStatus.equals("X")){
+        			xPt++;
+        		}
+        	}
+        	//if it's a lot of X return false
+        	if (xPt > 100){
+        		return false;
+        	}else {
+        		return true;
+        	}
+        	*/
+        	
     		/*
     		// robot was unable to move to that location, X
     		else{
@@ -356,6 +398,9 @@ public class MyRobot extends Robot {
     	}
     }
     
+    
+    
+    
     public ArrayList<Point> reconstructPath(Map<Point, Point> cameFrom, Point current) {
     	ArrayList<Point> totalPath = new ArrayList<>();
     	totalPath.add(current);
@@ -374,9 +419,7 @@ public class MyRobot extends Robot {
 
     public static void main(String[] args) {
         try {
-
-		myWorld = new World("./src/TestCases/myInputFile4.txt", true);
-
+			myWorld = new World("./src/TestCases/myInputFile3.txt", true);
 			
             MyRobot robot = new MyRobot();
             robot.addToWorld(myWorld);
