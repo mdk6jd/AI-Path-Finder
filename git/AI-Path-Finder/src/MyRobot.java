@@ -21,6 +21,10 @@ public class MyRobot extends Robot {
 			// call function to deal with uncertainty
         	ArrayList<Point> blocked = new ArrayList<Point>();
         	ArrayList<Point> path = AStarIsUncertain(start, end, blocked);
+            for(int i = path.size()-1; i >=0; i--){
+            	Point moveTo = path.get(i);
+            	this.move(moveTo);
+            }
         }
         else {
 			// call function to deal with certainty
@@ -67,6 +71,7 @@ public class MyRobot extends Robot {
         fScore.put(start, HeuristicCostEstimate(start, end));
 
         while (!openSet.isEmpty()){
+        	System.out.println(openSet);
             //current := the node in openSet having the lowest fScore[] value
         	double minimum = Double.MAX_VALUE;
         	Point current = new Point();
@@ -175,8 +180,7 @@ public class MyRobot extends Robot {
     }
     
     // code for uncertainty -------------------------------------------------------------------------------------------
-    
-    public ArrayList<Point> AStarIsUncertain(Point start, Point end, ArrayList<Point> blocked){
+  	public ArrayList<Point> AStarIsUncertain(Point start, Point end, ArrayList<Point> blocked){
     	
         // The set of nodes already evaluated
         ArrayList<Point> closedSet = new ArrayList<Point>();
@@ -214,6 +218,15 @@ public class MyRobot extends Robot {
         			current = openSet.get(i);
         			minimum = fScore.get(openSet.get(i));
         		}
+        	}
+
+        	// get robot location
+            Point robotLocation = this.getPosition();
+        	// if the current value to be explored is not in range of the robot, backtrack robot
+        	double xDiff = Math.abs(current.getX() - robotLocation.getX());
+        	double yDiff = Math.abs(current.getY() - robotLocation.getY());
+        	if(xDiff > 1 || yDiff > 1){
+        		backtrackTo(cameFrom, robotLocation, current);
         	}
         	
             if ( (current.getX() == end.getX()) && (current.getY() == end.getY()) ){
@@ -273,7 +286,7 @@ public class MyRobot extends Robot {
             	neighbors.add(botright);
             	if(!gScore.keySet().contains(botright)) gScore.put(botright, Double.MAX_VALUE);
             }
- 
+
             for (int i = 0; i < neighbors.size(); i++){
             	if (closedSet.contains(neighbors.get(i))){
             		continue;		// Ignore the neighbor which is already evaluated.
@@ -295,21 +308,64 @@ public class MyRobot extends Robot {
 	                continue;		// This is not a better path.
 	            }
 	            // This path is the best until now, move the robot and record it
-	            // System.out.print(this.getPosition());
+	            // System.out.println(this.getPosition());
+	            // System.out.println(neighbors.get(i));
+	            
 	            this.move(neighbors.get(i));
 	            cameFrom.put(neighbors.get(i), current);
 	            gScore.put(neighbors.get(i), tentative_gScore);
-	            fScore.put(neighbors.get(i), gScore.get(neighbors.get(i))+HeuristicCostEstimate(neighbors.get(i),end));
-
+	            fScore.put(neighbors.get(i), gScore.get(neighbors.get(i))+HeuristicCostEstimate(neighbors.get(i),end) + moreEstimate(neighbors.get(i), blocked));
+				
+				//System.out.println(openSet);
             }
         }   
-        
-        // robot is stuck, reset and try again (assumes that a path from S to F always exists)
+
+        // catch for if robot is completely stuck
+        // reset and try again (assumes that a path from S to F always exists)
         blocked.add(this.getPosition());
         backtrack(cameFrom, this.getPosition());
         return AStarIsUncertain(start, end, blocked);
     }
+
     
+    public void backtrackTo(Map<Point, Point> cameFrom, Point from, Point to){
+    	while(cameFrom.keySet().contains(from)){
+    		from = cameFrom.get(from);
+    		this.move(from);
+    		// exit if to is within range of robot
+        	double xDiff = Math.abs(from.getX() - to.getX());
+        	double yDiff = Math.abs(from.getY() - to.getY());
+        	if(!(xDiff > 1) || !(yDiff > 1)){
+        		break;
+        	}
+    	}
+    }   
+
+    public void backtrack(Map<Point, Point> cameFrom, Point current){
+    	while(cameFrom.keySet().contains(current)){
+    		current = cameFrom.get(current);
+    		this.move(current);
+    	}
+    } 
+
+  public double moreEstimate(Point p, ArrayList<Point> blocked) {
+  	int x = myWorld.numRows();
+  	int y = myWorld.numCols();
+  	if (p.getX() < x && p.getX() >= 0 && p.getY()< y && p.getY() >=0){
+  		
+	    	int xPt = 0;
+	    	for (int i = 0; i < 200; i++){
+	       		String positionStatus = pingMap(p).trim();
+	       		// record if it's X
+	    		if (positionStatus.equals("X")){
+	    			xPt++;
+	    		}
+	    	}
+	    	return xPt;
+  	}
+  	return 1000;
+  }
+
     public boolean isValidIsUncertain(Point p, ArrayList<Point> blocked) {
     	int x = myWorld.numRows();
     	int y = myWorld.numCols();
@@ -321,22 +377,24 @@ public class MyRobot extends Robot {
         	if (blocked.contains(p)){
         		return false;
         	}
+        	return true;        	
         	
-    		// robot current location 
-    		Point robotLocation = this.getPosition();
-    		// make sure you can move to that location on the map
-    		Point robotNeighborLocation = this.move(p);
-    		// robot was able to move to that location
-    		if(robotNeighborLocation.equals(p)){
-    			this.move(robotLocation);
-    			return true;
-    		}
-    		/*
-    		// robot was unable to move to that location, X
-    		else{
-    			blocked.add(p);
-    			return false;
-    		}*/
+        	/*
+        	int xPt = 0;
+        	for (int i = 0; i < 200; i++){
+           		String positionStatus = pingMap(p).trim();
+           		// record if it's X
+        		if (positionStatus.equals("X")){
+        			xPt++;
+        		}
+        	}
+        	//if it's a lot of X return false
+        	if (xPt > 100){
+        		return false;
+        	}else {
+        		return true;
+        	}
+        	*/
     	}
     	return false;
     }
@@ -345,14 +403,7 @@ public class MyRobot extends Robot {
     	// diagonal distance
     	double cost = Math.max(Math.abs(current.getX() - end.getX()), Math.abs(current.getY() - end.getY()));
     	return cost;
-    }
-    
-    public void backtrack(Map<Point, Point> cameFrom, Point current){
-    	while(cameFrom.keySet().contains(current)){
-    		current = cameFrom.get(current);
-    		this.move(current);
-    	}
-    }
+    } 
     
     public ArrayList<Point> reconstructPath(Map<Point, Point> cameFrom, Point current) {
     	ArrayList<Point> totalPath = new ArrayList<>();
@@ -372,11 +423,11 @@ public class MyRobot extends Robot {
 
     public static void main(String[] args) {
         try {
-			myWorld = new World("./src/TestCases/myInputFile4.txt", true);
+			myWorld = new World("./TestCases/myInputFile3.txt", true);
 			
             MyRobot robot = new MyRobot();
             robot.addToWorld(myWorld);
-			// myWorld.createGUI(400, 400, 200); // uncomment this and create a GUI; the last parameter is delay in msecs
+			myWorld.createGUI(400, 400, 10); // uncomment this and create a GUI; the last parameter is delay in msecs
 
 			robot.travelToDestination();
         }
